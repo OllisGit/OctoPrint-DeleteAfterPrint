@@ -18,10 +18,10 @@ plugin_version = "1.0.0"
 
 # The plugin's description. Can be overwritten within OctoPrint's internal data via __plugin_description__ in the plugin
 # module
-plugin_description = """Deletes automaticaly the Print-Model after succesful print"""
+plugin_description = """Delete automatically the Print-Model after successful print"""
 
 # The plugin's author. Can be overwritten within OctoPrint's internal data via __plugin_author__ in the plugin module
-plugin_author = "OllisGit"
+plugin_author = "Olli"
 
 # The plugin's author's mail address.
 plugin_author_email = "you@example.com"

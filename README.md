@@ -1,6 +1,8 @@
 # OctoPrint-DeleteAfterPrint
 
-**TODO:** Describe what your plugin does.
+** WORK IN PROGRESS **
+
+Delete automatically the Print-Model after successful print
 
 ## Setup
 
