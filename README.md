@@ -18,4 +18,4 @@ or manually using this URL:
 
 ## Configuration
 
-This setting can be edited in OctoPrint Plugin-Settings section.
+Settings can be edited in OctoPrint Plugin-Settings section.
