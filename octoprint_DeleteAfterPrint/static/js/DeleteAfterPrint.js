@@ -5,14 +5,39 @@
  * License: AGPLv3
  */
 $(function() {
-    function DeleteafterprintViewModel(parameters) {
+    function DeleteAfterPrintViewModel(parameters) {
         var self = this;
 
-        // assign the injected parameters, e.g.:
-        // self.loginStateViewModel = parameters[0];
-        // self.settingsViewModel = parameters[1];
 
-        // TODO: Implement your plugin's view model here.
+        // assign the injected parameters, e.g.:
+        self.loginState = parameters[0];
+        // self.settingsViewModel = parameters[1];
+        self.deleteAfterPrintEnabled = ko.observable();
+        self.onDeleteAfterPrintEvent = function() {
+            if (self.deleteAfterPrintEnabled()) {
+                $.ajax({
+                    url: API_BASEURL + "plugin/DeleteAfterPrint",
+                    type: "POST",
+                    dataType: "json",
+                    data: JSON.stringify({
+                        command: "enable"
+                    }),
+                    contentType: "application/json; charset=UTF-8"
+                })
+            } else {
+                $.ajax({
+                    url: API_BASEURL + "plugin/DeleteAfterPrint",
+                    type: "POST",
+                    dataType: "json",
+                    data: JSON.stringify({
+                        command: "disable"
+                    }),
+                    contentType: "application/json; charset=UTF-8"
+                })
+            }
+        }
+        // assign event-listener
+        self.deleteAfterPrintEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
     }
 
     /* view model class, parameters for constructor, container to bind to
@@ -20,10 +45,12 @@ $(function() {
      * and a full list of the available options.
      */
     OCTOPRINT_VIEWMODELS.push({
-        construct: DeleteafterprintViewModel,
+        construct: DeleteAfterPrintViewModel,
         // ViewModels your plugin depends on, e.g. loginStateViewModel, settingsViewModel, ...
-        dependencies: [ /* "loginStateViewModel", "settingsViewModel" */ ],
+        dependencies: [ "loginStateViewModel", "settingsViewModel"  ],
         // Elements to bind to, e.g. #settings_plugin_DeleteAfterPrint, #tab_plugin_DeleteAfterPrint, ...
-        elements: [ /* ... */ ]
+        elements: [
+            document.getElementById("sidebar_plugin_deleteAfterPrint")
+        ]
     });
 });

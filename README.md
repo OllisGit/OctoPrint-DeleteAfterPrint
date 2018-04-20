@@ -1,8 +1,12 @@
 # OctoPrint-DeleteAfterPrint
 
-** WORK IN PROGRESS **
+Delete automatically the Print-Model after successful print.
 
-Delete automatically the Print-Model after successful print
+The user can enable automatic shutdown for each print by using a checkbox in the sidebar.
+
+**ATTENTION: There is no confirmation pop-up!!!** 
+
+![Sidebar](screenshots/sidebar.jpg)
 
 ## Setup
 
@@ -11,9 +15,7 @@ or manually using this URL:
 
     https://github.com/OllisGit/OctoPrint-DeleteAfterPrint/archive/master.zip
 
-**TODO:** Describe how to install your plugin, if more needs to be done than just installing it via pip or through
-the plugin manager.
 
 ## Configuration
 
-**TODO:** Describe your plugin's configuration options (if any).
+This setting can be edited in OctoPrint Plugin-Settings section.

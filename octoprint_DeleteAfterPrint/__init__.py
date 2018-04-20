@@ -8,65 +8,154 @@ from __future__ import absolute_import
 # as necessary.
 #
 # Take a look at the documentation on what other plugin mixins are available.
-
+import os
 import octoprint.plugin
+from octoprint.filemanager.destinations import FileDestinations
+from octoprint.events import eventManager, Events
 
-class DeleteafterprintPlugin(octoprint.plugin.SettingsPlugin,
-                             octoprint.plugin.AssetPlugin,
-                             octoprint.plugin.TemplatePlugin):
+import octoprint.filemanager
+import octoprint.filemanager.util
+import octoprint.filemanager.storage
 
-	##~~ SettingsPlugin mixin
+class DeleteAfterPrintPlugin(
+    octoprint.plugin.SettingsPlugin,
+    octoprint.plugin.AssetPlugin,
+    octoprint.plugin.TemplatePlugin,
+    # my stuff
+    octoprint.plugin.EventHandlerPlugin,
+    octoprint.plugin.SimpleApiPlugin,
+    octoprint.plugin.StartupPlugin
+):
 
-	def get_settings_defaults(self):
-		return dict(
-			# put your plugin's default settings here
-		)
+    def __init__(self):
+        self.rememberCheckBox = False
+        self.lastCheckBoxValue = False
+        self._deleteAfterPrintEnabled = False
 
-	##~~ AssetPlugin mixin
+    def initialize(self):
+        self.rememberCheckBox = self._settings.get_boolean(["rememberCheckBox"])
+        self._logger.debug("rememberCheckBox: %s" % self.rememberCheckBox)
 
-	def get_assets(self):
-		# Define your plugin's asset files to automatically include in the
-		# core UI here.
-		return dict(
-			js=["js/DeleteAfterPrint.js"],
-			css=["css/DeleteAfterPrint.css"],
-			less=["less/DeleteAfterPrint.less"]
-		)
+        self.lastCheckBoxValue = self._settings.get_boolean(["lastCheckBoxValue"])
+        self._logger.debug("lastCheckBoxValue: %s" % self.lastCheckBoxValue)
+        if self.rememberCheckBox:
+            self._deleteAfterPrintEnabled = self.lastCheckBoxValue
 
-	##~~ Softwareupdate hook
+    # start/stop event-hook
+    def on_event(self, event, payload):
 
-	def get_update_information(self):
-		# Define the configuration for your plugin to use with the Software Update
-		# Plugin here. See https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update
-		# for details.
-		return dict(
-			DeleteAfterPrint=dict(
-				displayName="Deleteafterprint Plugin",
-				displayVersion=self._plugin_version,
+        if event == Events.CLIENT_OPENED:
+            self._plugin_manager.send_plugin_message(self._identifier,
+                                                     dict(deleteAfterPrintEnabled=self._deleteAfterPrintEnabled))
+            return
 
-				# version check: github repository
-				type="github_release",
-				user="OllisGit",
-				repo="OctoPrint-DeleteAfterPrint",
-				current=self._plugin_version,
+        if event == Events.PRINT_STARTED:
+            self._logger.info("Printing started. Detailed progress started." + str(payload))
 
-				# update method: pip
-				pip="https://github.com/OllisGit/OctoPrint-DeleteAfterPrint/archive/{target_version}.zip"
-			)
-		)
+        elif event in (Events.PRINT_DONE):
+            self._logger.info("Printing succesfull!")
+
+            if self._deleteAfterPrintEnabled:
+                # see files.py deleteGcodeFile API
+                destination = payload.get("origin", "")
+                filename = payload.get("name", "")
+
+                self._printer.unselect_file()
+                if destination == FileDestinations.SDCARD:
+                    self._printer.delete_sd_file(filename)
+                else:
+                    self._file_manager.remove_file(destination, filename)
+
+                self._logger.info("File deleted.")
+
+    def get_template_configs(self):
+        return [dict(type="sidebar",
+                     name="Automatic Deletion",
+                     custom_bindings=False,
+                     icon="trash"),
+                dict(type="settings", custom_bindings=False)]
+## fa-trash-o
+
+    def get_api_commands(self):
+        return dict(enable=[],
+                    disable=[],
+                    abort=[])
+
+    def on_api_command(self, command, data):
+        #if not user_permission.can():
+        #    return make_response("Insufficient rights", 403)
+
+        if command == "enable":
+            self._deleteAfterPrintEnabled = True
+        elif command == "disable":
+            self._deleteAfterPrintEnabled = False
+
+        if command == "enable" or command == "disable":
+            self.lastCheckBoxValue = self._deleteAfterPrintEnabled
+            if self.rememberCheckBox:
+                self._settings.set_boolean(["lastCheckBoxValue"], self.lastCheckBoxValue)
+                self._settings.save()
+                eventManager().fire(Events.SETTINGS_UPDATED)
+
+        self._plugin_manager.send_plugin_message(self._identifier,
+                                                 dict(deleteAfterPrintEnabled=self._deleteAfterPrintEnabled))
+
+    ##~~ SettingsPlugin mixin
+    def get_settings_defaults(self):
+        return dict(
+            # put your plugin's default settings here
+            rememberCheckBox=False,
+            lastCheckBoxValue=False
+        )
+
+    def on_settings_save(self, data):
+        octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
+        self.rememberCheckBox = self._settings.get_boolean(["rememberCheckBox"])
+        self.lastCheckBoxValue = self._settings.get_boolean(["lastCheckBoxValue"])
+
+    ##~~ AssetPlugin mixin
+    def get_assets(self):
+        # Define your plugin's asset files to automatically include in the
+        # core UI here.
+        return dict(
+            js=["js/DeleteAfterPrint.js"],
+            css=["css/DeleteAfterPrint.css"],
+            less=["less/DeleteAfterPrint.less"]
+        )
+
+    ##~~ Softwareupdate hook
+    def get_update_information(self):
+        # Define the configuration for your plugin to use with the Software Update
+        # Plugin here. See https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update
+        # for details.
+        return dict(
+            DeleteAfterPrint=dict(
+                displayName="DeleteAfterPrint Plugin",
+                displayVersion=self._plugin_version,
+
+                # version check: github repository
+                type="github_release",
+                user="OllisGit",
+                repo="OctoPrint-DeleteAfterPrint",
+                current=self._plugin_version,
+
+                # update method: pip
+                pip="https://github.com/OllisGit/OctoPrint-DeleteAfterPrint/archive/{target_version}.zip"
+            )
+        )
 
 
 # If you want your plugin to be registered within OctoPrint under a different name than what you defined in setup.py
 # ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that
 # can be overwritten via __plugin_xyz__ control properties. See the documentation for that.
-__plugin_name__ = "Deleteafterprint Plugin"
+__plugin_name__ = "DeleteAfterPrint Plugin"
+
 
 def __plugin_load__():
-	global __plugin_implementation__
-	__plugin_implementation__ = DeleteafterprintPlugin()
+    global __plugin_implementation__
+    __plugin_implementation__ = DeleteAfterPrintPlugin()
 
-	global __plugin_hooks__
-	__plugin_hooks__ = {
-		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
-	}
-
+    global __plugin_hooks__
+    __plugin_hooks__ = {
+        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
+    }
