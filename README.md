@@ -1,6 +1,6 @@
 # OctoPrint-DeleteAfterPrint
 
-Delete automatically the Print-Model after successful print.
+Delete automatically the Print-Model after successful print. If the print fails, the deletion is not executed.
 
 The user can enable automatic shutdown for each print by using a checkbox in the sidebar.
 
