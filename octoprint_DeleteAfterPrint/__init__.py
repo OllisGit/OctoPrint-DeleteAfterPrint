@@ -59,10 +59,13 @@ class DeleteAfterPrintPlugin(
             self._logger.info("Printing succesfull!")
             if self._deleteAfterPrintEnabled:
                 self._logger.info("Try unselect file")
-                time.sleep(2)
+                for attempt in range(1, 5):
+                    if self._printer.is_ready() == True:
+                        break;
+                    self._logger.info("...wait for printer being ready...attempt:"+str(attempt))
+                    time.sleep(1)
                 self._logger.info("Ready:::" + str(self._printer.is_ready()))
                 self._printer.unselect_file()
-                time.sleep(2)
                 self._logger.info("Unselect file")
 
                 self._destination = payload.get("origin", "")
