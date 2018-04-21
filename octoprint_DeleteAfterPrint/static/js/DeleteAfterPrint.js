@@ -39,7 +39,6 @@ $(function() {
         self.deleteAfterPrintEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
-            debugger
             if (plugin != "DeleteAfterPrint") {
                 return;
             }
