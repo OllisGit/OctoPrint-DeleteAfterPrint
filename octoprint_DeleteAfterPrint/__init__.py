@@ -8,6 +8,7 @@ from __future__ import absolute_import
 # as necessary.
 #
 # Take a look at the documentation on what other plugin mixins are available.
+import time
 import os
 import octoprint.plugin
 from octoprint.filemanager.destinations import FileDestinations
@@ -57,7 +58,9 @@ class DeleteAfterPrintPlugin(
         elif event == Events.PRINT_DONE:
             self._logger.info("Printing succesfull!")
             if self._deleteAfterPrintEnabled:
+                self._logger.info("Try unselect file")
                 self._printer.unselect_file()
+                time.sleep(2)
                 self._logger.info("Unselect file")
 
                 self._destination = payload.get("origin", "")
