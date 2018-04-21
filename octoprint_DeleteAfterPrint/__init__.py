@@ -32,6 +32,8 @@ class DeleteAfterPrintPlugin(
         self.lastCheckBoxValue = False
         self._deleteAfterPrintEnabled = False
 
+        self._deleteFile = False
+
     def initialize(self):
         self.rememberCheckBox = self._settings.get_boolean(["rememberCheckBox"])
         self._logger.debug("rememberCheckBox: %s" % self.rememberCheckBox)
@@ -57,15 +59,27 @@ class DeleteAfterPrintPlugin(
 
             if self._deleteAfterPrintEnabled:
                 # see files.py deleteGcodeFile API
-                destination = payload.get("origin", "")
-                filename = payload.get("name", "")
+                self._destination = payload.get("origin", "")
+                self._filename = payload.get("name", "")
 
+                self._deleteFile = True
                 self._printer.unselect_file()
-                if destination == FileDestinations.SDCARD:
-                    self._printer.delete_sd_file(filename)
-                else:
-                    self._file_manager.remove_file(destination, filename)
+#                if destination == FileDestinations.SDCARD:
+#                    self._printer.delete_sd_file(filename)
+#                else:
+#                    self._file_manager.remove_file(destination, filename)
 
+                #self._logger.info("File deleted.")
+
+        elif event == Events.METADATA_STATISTICS_UPDATED:
+            if self._deleteFile:
+                self._deleteFile = False
+
+
+                if self._destination == FileDestinations.SDCARD:
+                    self._printer.delete_sd_file(self._filename)
+                else:
+                    self._file_manager.remove_file(self._destination, self._filename)
                 self._logger.info("File deleted.")
 
     def get_template_configs(self):
