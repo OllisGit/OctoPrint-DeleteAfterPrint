@@ -8,7 +8,6 @@ $(function() {
     function DeleteAfterPrintViewModel(parameters) {
         var self = this;
 
-
         // assign the injected parameters, e.g.:
         self.loginState = parameters[0];
         // self.settingsViewModel = parameters[1];
@@ -38,6 +37,17 @@ $(function() {
         }
         // assign event-listener
         self.deleteAfterPrintEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
+
+        self.onDataUpdaterPluginMessage = function(plugin, data) {
+            debugger
+            if (plugin != "DeleteAfterPrint") {
+                return;
+            }
+            self.deleteAfterPrintEnabled(data.deleteAfterPrintEnabled);
+        }
+
+
+
     }
 
     /* view model class, parameters for constructor, container to bind to
