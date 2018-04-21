@@ -54,28 +54,20 @@ class DeleteAfterPrintPlugin(
         if event == Events.PRINT_STARTED:
             self._logger.info("Printing started. Detailed progress started." + str(payload))
 
-        elif event in (Events.PRINT_DONE):
+        elif event == Events.PRINT_DONE:
             self._logger.info("Printing succesfull!")
-
             if self._deleteAfterPrintEnabled:
-                # see files.py deleteGcodeFile API
+                self._printer.unselect_file()
+                self._logger.info("Unselect file")
+
                 self._destination = payload.get("origin", "")
                 self._filename = payload.get("name", "")
-
                 self._deleteFile = True
-                self._printer.unselect_file()
-#                if destination == FileDestinations.SDCARD:
-#                    self._printer.delete_sd_file(filename)
-#                else:
-#                    self._file_manager.remove_file(destination, filename)
-
-                #self._logger.info("File deleted.")
 
         elif event == Events.METADATA_STATISTICS_UPDATED:
             if self._deleteFile:
                 self._deleteFile = False
-
-
+                # see files.py deleteGcodeFile API
                 if self._destination == FileDestinations.SDCARD:
                     self._printer.delete_sd_file(self._filename)
                 else:
