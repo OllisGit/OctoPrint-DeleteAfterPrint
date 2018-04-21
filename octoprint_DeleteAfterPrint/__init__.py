@@ -59,6 +59,8 @@ class DeleteAfterPrintPlugin(
             self._logger.info("Printing succesfull!")
             if self._deleteAfterPrintEnabled:
                 self._logger.info("Try unselect file")
+                time.sleep(2)
+                self._logger.info("Busy:::" + self._printer.isBusy() + " Streaming:::" + self._printer.isStreaming())
                 self._printer.unselect_file()
                 time.sleep(2)
                 self._logger.info("Unselect file")
