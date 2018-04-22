@@ -10,8 +10,14 @@ $(function() {
 
         // assign the injected parameters, e.g.:
         self.loginState = parameters[0];
-        // self.settingsViewModel = parameters[1];
+        self.settingsViewModel = parameters[1];
         self.deleteAfterPrintEnabled = ko.observable();
+
+        self.settingsViewModel.isDaysLimitVisible = function(daysLimit) {
+            var result = daysLimit !== "0";
+            return result;
+        };
+
         self.onDeleteAfterPrintEvent = function() {
             if (self.deleteAfterPrintEnabled()) {
                 $.ajax({
@@ -42,7 +48,17 @@ $(function() {
             if (plugin != "DeleteAfterPrint") {
                 return;
             }
-            self.deleteAfterPrintEnabled(data.deleteAfterPrintEnabled);
+            if (data.deleteAfterPrintEnabled){
+                self.deleteAfterPrintEnabled(data.deleteAfterPrintEnabled);
+            }
+            if (data.message){
+					new PNotify({
+						title: 'Old files were deleted:',
+						text: data.message,
+						type: "popup",
+						hide: false
+						});
+            }
         }
 
 
@@ -59,7 +75,8 @@ $(function() {
         dependencies: [ "loginStateViewModel", "settingsViewModel"  ],
         // Elements to bind to, e.g. #settings_plugin_DeleteAfterPrint, #tab_plugin_DeleteAfterPrint, ...
         elements: [
-            document.getElementById("sidebar_plugin_deleteAfterPrint")
+            document.getElementById("sidebar_plugin_deleteAfterPrint"),
+            document.getElementById("deleteafterprint_plugin_navbar")
         ]
     });
 });

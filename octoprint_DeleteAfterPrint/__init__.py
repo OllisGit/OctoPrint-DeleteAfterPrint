@@ -9,8 +9,10 @@ from __future__ import absolute_import
 #
 # Take a look at the documentation on what other plugin mixins are available.
 import time
+from datetime import datetime, timedelta
 import os
 import octoprint.plugin
+from operator import itemgetter
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.events import eventManager, Events
 
@@ -34,6 +36,7 @@ class DeleteAfterPrintPlugin(
         self._deleteAfterPrintEnabled = False
 
         self._deleteFile = False
+        self.daysLimit = 0
 
     def initialize(self):
         self.rememberCheckBox = self._settings.get_boolean(["rememberCheckBox"])
@@ -44,16 +47,49 @@ class DeleteAfterPrintPlugin(
         if self.rememberCheckBox:
             self._deleteAfterPrintEnabled = self.lastCheckBoxValue
 
+        self.daysLimit = self._settings.get_int(["daysLimit"])
+
+
+
     # start/stop event-hook
     def on_event(self, event, payload):
 
         if event == Events.CLIENT_OPENED:
             self._plugin_manager.send_plugin_message(self._identifier,
                                                      dict(deleteAfterPrintEnabled=self._deleteAfterPrintEnabled))
-            return
 
-        if event == Events.PRINT_STARTED:
+            # is deletion after days activated
+            daysLimit = self._settings.get_int(["daysLimit"])
+            if (daysLimit > 0):
+                allFiles = self._file_manager.list_files(filter=self._historyFilterFunction)
+                notificationMessage = ""
+
+                for destination in allFiles:
+                    allFileEntries = allFiles.get(destination)
+                    for fileEntries in allFileEntries:
+                        if (len(fileEntries) > 0):
+                            filename = fileEntries
+                                #fileEntries.keys()[0]
+                            if destination == FileDestinations.SDCARD:
+                                self._printer.delete_sd_file(filename)
+                            else:
+                                self._file_manager.remove_file(destination, filename)
+                            ## popup notifier
+                            notificationMessage += "<li>" + filename + "</li>"
+                            self._logger.info("File deleted '%s'." % filename)
+
+                if notificationMessage:
+                    notificationMessage = "<ul>" + notificationMessage + "</ul>"
+                    self._plugin_manager.send_plugin_message(self._identifier,
+                                                             dict(type="popup", message=notificationMessage))
+
+        elif event == Events.PRINT_STARTED:
             self._logger.info("Printing started. Detailed progress started." + str(payload))
+            fileData = self._file_manager.get_metadata(payload["origin"], payload["file"])
+            self._logger.info("Try unselect file")
+
+        elif event == Events.FILE_SELECTED:
+            self._logger.info("File selected")
 
         elif event == Events.PRINT_DONE:
             self._logger.info("Printing succesfull!")
@@ -81,6 +117,23 @@ class DeleteAfterPrintPlugin(
                 else:
                     self._file_manager.remove_file(self._destination, self._filename)
                 self._logger.info("File deleted.")
+
+    def _historyFilterFunction(self, entry, entry_data):
+        history = entry_data.get("history")
+        if history is not None:
+            orderedList = sorted(history, key=itemgetter('timestamp'), reverse=True)
+            if orderedList:
+                lastEntry = orderedList[0]
+                lastPrintTimestamp = lastEntry.get("timestamp")
+                currentTime = time.time()
+                currentDate = datetime.now()
+                daysLimit = self._settings.get_int(["daysLimit"])
+                limitDate = currentDate - timedelta(days=daysLimit)
+                lastPrintDate = datetime.fromtimestamp(lastPrintTimestamp)
+
+                if lastPrintDate < limitDate:
+                    # to be delete
+                    return entry
 
     def get_template_configs(self):
         return [dict(type="sidebar",
@@ -119,13 +172,15 @@ class DeleteAfterPrintPlugin(
         return dict(
             # put your plugin's default settings here
             rememberCheckBox=False,
-            lastCheckBoxValue=False
+            lastCheckBoxValue=False,
+            daysLimit=0
         )
 
     def on_settings_save(self, data):
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
         self.rememberCheckBox = self._settings.get_boolean(["rememberCheckBox"])
         self.lastCheckBoxValue = self._settings.get_boolean(["lastCheckBoxValue"])
+        self.daysLimit = self._settings.get_int(["daysLimit"])
 
     ##~~ AssetPlugin mixin
     def get_assets(self):

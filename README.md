@@ -1,12 +1,17 @@
-# OctoPrint-DeleteAfterPrint
+# DeleteAfterPrint
 
-Delete automatically the Print-Model after successful print. If the print fails, the deletion is not executed.
+Delete automatically the Print-Model: 
+* after successful print. If the print fails, the deletion is not executed!
+* after predefined days
 
-The user can enable automatic deletion for each print by using a checkbox in the sidebar.
+The user can enable automatic deletion after each print by using a checkbox in the sidebar.
+
+If you want to delete files after a couple of days, use the Plugin-Settings. Deletion in done while opening OctoPrint.
 
 **ATTENTION: There is no confirmation pop-up!!!** 
 
 ![Sidebar](screenshots/sidebar.jpg)
+![Sidebar](screenshots/plugin-settings.jpg)
 
 ## Setup
 

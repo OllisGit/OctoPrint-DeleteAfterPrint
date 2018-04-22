@@ -1,14 +1,36 @@
 <form class="form-horizontal">
 
-    <h4>General</h4>
+    <h4>Auto Delete</h4>
     <div class="accordion-inner">
         <div class="control-group">
             <div class="controls">
-                <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.DeleteAfterPrint.rememberCheckBox"> Remember the value of "Delete after print finishes"
+                <label>
+                    <input type="checkbox" data-bind="checked: settings.plugins.DeleteAfterPrint.rememberCheckBox"> Remember the value of "Delete after print finishes"
                 </label>
             </div>
         </div>
     </div>
+
+    <h4>Delete after days</h4>
+    <div class="accordion-inner">
+        <div class="control-group">
+            <div class="controls">
+                <label >Delete files after:
+                    <div class="input-append">
+                        <input type="number" step="any" min="0" class="input-mini text-right"  data-bind="value: settings.plugins.DeleteAfterPrint.daysLimit" id="settings-daysLimit">
+                        <span class="add-on">days</span>
+                    </div>
+                </label>
+                <span class="help-block">
+                    Value must be between 1 and N. <br/>
+                    A value of 0 means that this functionality is tunred off. No deletion after days!<br/>
+                    <br/>
+                    If you want to execute the deletion right now you need to reload the page, because identifying the files is only executed while opening OctoPrint.
+                </span>
+
+            </div>
+        </div>
+    </div>
+
 </form>
 
