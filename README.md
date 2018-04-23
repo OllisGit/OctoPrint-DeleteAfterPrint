@@ -11,7 +11,7 @@ If you want to delete files after a couple of days, use the Plugin-Settings. Del
 **ATTENTION: There is no confirmation pop-up!!!** 
 
 ![Sidebar](screenshots/sidebar.jpg)
-![Sidebar](screenshots/plugin-settings.jpg)
+![PluginSettings](screenshots/plugin-settings.jpg)
 
 ## Setup
 
