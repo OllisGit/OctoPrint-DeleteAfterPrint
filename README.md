@@ -1,10 +1,5 @@
 # DeleteAfterPrint
 
----
-<span style="color:red">A User reported that after installation **ALL OLD FILES** where automaticaly deleted!!</span>
-This shouldnt' happen! I am investigating this [issue](https://github.com/OllisGit/OctoPrint-DeleteAfterPrint/issues/3).
----
-
 Delete automatically the Print-Model: 
 * after successful print. If the print fails, the deletion is not executed!
 * after predefined days
