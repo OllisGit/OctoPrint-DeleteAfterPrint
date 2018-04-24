@@ -1,5 +1,10 @@
 # DeleteAfterPrint
 
+---
+<span style="color:red">A User reported that after installation **ALL OLD FILES** where automaticaly deleted!!</span>
+This shouldnt' happen! I am investigating this [issue](https://github.com/OllisGit/OctoPrint-DeleteAfterPrint/issues/3).
+---
+
 Delete automatically the Print-Model: 
 * after successful print. If the print fails, the deletion is not executed!
 * after predefined days
@@ -9,6 +14,8 @@ The user can enable automatic deletion after each print by using a checkbox in t
 If you want to delete files after a couple of days, use the Plugin-Settings. Deletion in done while opening OctoPrint.
 
 **ATTENTION: There is no confirmation pop-up!!!** 
+
+
 
 ![Sidebar](screenshots/sidebar.jpg)
 ![PluginSettings](screenshots/plugin-settings.jpg)
