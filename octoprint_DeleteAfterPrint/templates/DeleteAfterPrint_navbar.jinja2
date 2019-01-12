@@ -1,4 +1,5 @@
 <div id="deleteafterprint_plugin_navbar"
+     style="display:none"
      data-bind="visible:settingsViewModel.isDaysLimitVisible(settingsViewModel.settings.plugins.DeleteAfterPrint.daysLimit()),
                 attr:{ title: 'Auto deletion after '+settingsViewModel.settings.plugins.DeleteAfterPrint.daysLimit()+' day(s)' }">
     <p class="nav navbar-text"><i class="fa fa-trash"></i><strong><span data-bind="html: settingsViewModel.settings.plugins.DeleteAfterPrint.daysLimit"></span>d</strong></p>

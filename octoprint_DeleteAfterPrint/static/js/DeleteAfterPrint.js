@@ -6,6 +6,17 @@
  */
 $(function() {
     function DeleteAfterPrintViewModel(parameters) {
+
+        var PLUGIN_ID = "DeleteAfterPrint";
+        // enable support of resetSettings
+        new ResetSettingsUtil().assignResetSettingsFeature(PLUGIN_ID, function(data){
+                                // assign new settings-values // TODO find a more generic way
+                                self.settingsViewModel.settings.plugins.DeleteAfterPrint.daysLimit(data.daysLimit);
+                                self.settingsViewModel.settings.plugins.DeleteAfterPrint.lastCheckBoxValue(data.lastCheckBoxValue);
+                                self.settingsViewModel.settings.plugins.DeleteAfterPrint.rememberCheckBox(data.rememberCheckBox);
+        });
+
+
         var self = this;
 
         // assign the injected parameters, e.g.:
@@ -14,7 +25,7 @@ $(function() {
         self.deleteAfterPrintEnabled = ko.observable();
 
         self.settingsViewModel.isDaysLimitVisible = function(daysLimit) {
-            var result = daysLimit !== "0";
+            var result = daysLimit != "0";
             return result;
         };
 
@@ -45,10 +56,10 @@ $(function() {
         self.deleteAfterPrintEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
-            if (plugin != "DeleteAfterPrint") {
+            if (plugin != PLUGIN_ID) {
                 return;
             }
-            if (data.deleteAfterPrintEnabled){
+            if (data.deleteAfterPrintEnabled != undefined){
                 self.deleteAfterPrintEnabled(data.deleteAfterPrintEnabled);
             }
             if (data.message){
@@ -60,9 +71,6 @@ $(function() {
 						});
             }
         }
-
-
-
     }
 
     /* view model class, parameters for constructor, container to bind to
@@ -76,7 +84,8 @@ $(function() {
         // Elements to bind to, e.g. #settings_plugin_DeleteAfterPrint, #tab_plugin_DeleteAfterPrint, ...
         elements: [
             document.getElementById("sidebar_plugin_deleteAfterPrint"),
-            document.getElementById("deleteafterprint_plugin_navbar")
+            document.getElementById("deleteafterprint_plugin_navbar"),
+            document.getElementById("deleteafterprint_plugin_settings")
         ]
     });
 });

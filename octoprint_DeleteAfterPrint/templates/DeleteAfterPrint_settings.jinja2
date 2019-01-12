@@ -1,11 +1,11 @@
-<form class="form-horizontal">
+<form id="deleteafterprint_plugin_settings" class="form-horizontal">
 
     <h4>Auto Delete</h4>
     <div class="accordion-inner">
         <div class="control-group">
             <div class="controls">
                 <label>
-                    <input type="checkbox" data-bind="checked: settings.plugins.DeleteAfterPrint.rememberCheckBox"> Remember the value of "Delete after print finishes"
+                    <input type="checkbox" data-bind="checked: settingsViewModel.settings.plugins.DeleteAfterPrint.rememberCheckBox"> Remember the value of "Delete after print finishes"
                 </label>
             </div>
         </div>
@@ -17,7 +17,7 @@
             <div class="controls">
                 <label >Delete files after:
                     <div class="input-append">
-                        <input type="number" step="any" min="0" class="input-mini text-right"  data-bind="value: settings.plugins.DeleteAfterPrint.daysLimit" id="settings-daysLimit">
+                        <input type="number" step="any" min="0" class="input-mini text-right"  data-bind="value: settingsViewModel.settings.plugins.DeleteAfterPrint.daysLimit" id="settings-daysLimit">
                         <span class="add-on">days</span>
                     </div>
                 </label>

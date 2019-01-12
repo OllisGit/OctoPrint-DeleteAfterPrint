@@ -8,6 +8,7 @@ from __future__ import absolute_import
 # as necessary.
 #
 # Take a look at the documentation on what other plugin mixins are available.
+import flask
 import time
 from datetime import datetime, timedelta
 import os
@@ -167,12 +168,30 @@ class DeleteAfterPrintPlugin(
         self._plugin_manager.send_plugin_message(self._identifier,
                                                  dict(deleteAfterPrintEnabled=self._deleteAfterPrintEnabled))
 
+
+    def on_api_get(self, request):
+        action = request.values["action"]
+
+        if ("isResetSettingsEnabled" == action):
+            return flask.jsonify(enabled="true")
+
+        if ("resetSettings" == action):
+            self._settings.set([], self.get_settings_defaults())
+            self._settings.save()
+            return flask.jsonify(self.get_settings_defaults())
+
+    # ~~ TemplatePlugin mixin
+    def get_template_configs(self):
+        return [
+            dict(type="settings", custom_bindings=True)
+        ]
+
     ##~~ SettingsPlugin mixin
     def get_settings_defaults(self):
         return dict(
             # put your plugin's default settings here
-            rememberCheckBox=False,
-            lastCheckBoxValue=False,
+            rememberCheckBox=True,
+            lastCheckBoxValue=True,
             daysLimit=0
         )
 
@@ -187,7 +206,8 @@ class DeleteAfterPrintPlugin(
         # Define your plugin's asset files to automatically include in the
         # core UI here.
         return dict(
-            js=["js/DeleteAfterPrint.js"],
+            js=["js/DeleteAfterPrint.js",
+                "js/ResetSettingsUtil.js"],
             css=["css/DeleteAfterPrint.css"],
             less=["less/DeleteAfterPrint.less"]
         )
