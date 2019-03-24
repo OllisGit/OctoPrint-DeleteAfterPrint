@@ -54,7 +54,7 @@ function ResetSettingsUtil(){
                                 title: "Default settings saved!",
                                 text: "The plugin-settings were now reseted to default values.<br>Please do a Browser reload (Strg+F5) to update all settings in the UI.",
                                 type: "info",
-                                hide: true
+                                hide: false
                             });
 
                             mapSettingsToViewModel_function(data);

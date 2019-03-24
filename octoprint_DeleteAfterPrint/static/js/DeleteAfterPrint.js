@@ -12,7 +12,6 @@ $(function() {
         new ResetSettingsUtil().assignResetSettingsFeature(PLUGIN_ID, function(data){
                                 // assign new settings-values // TODO find a more generic way
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.daysLimit(data.daysLimit);
-                                self.settingsViewModel.settings.plugins.DeleteAfterPrint.lastCheckBoxValue(data.lastCheckBoxValue);
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.rememberCheckBox(data.rememberCheckBox);
         });
 
@@ -22,7 +21,9 @@ $(function() {
         // assign the injected parameters, e.g.:
         self.loginState = parameters[0];
         self.settingsViewModel = parameters[1];
+
         self.deleteAfterPrintEnabled = ko.observable();
+        self.deleteInSubFoldersEnabled = ko.observable();
 
         self.settingsViewModel.isDaysLimitVisible = function(daysLimit) {
             var result = daysLimit != "0";
@@ -30,30 +31,24 @@ $(function() {
         };
 
         self.onDeleteAfterPrintEvent = function() {
-            if (self.deleteAfterPrintEnabled()) {
-                $.ajax({
-                    url: API_BASEURL + "plugin/DeleteAfterPrint",
-                    type: "POST",
-                    dataType: "json",
-                    data: JSON.stringify({
-                        command: "enable"
-                    }),
-                    contentType: "application/json; charset=UTF-8"
-                })
-            } else {
-                $.ajax({
-                    url: API_BASEURL + "plugin/DeleteAfterPrint",
-                    type: "POST",
-                    dataType: "json",
-                    data: JSON.stringify({
-                        command: "disable"
-                    }),
-                    contentType: "application/json; charset=UTF-8"
-                })
-            }
+            var checkedDeleteAfterPrint = self.deleteAfterPrintEnabled();
+            var checkedDeleteOnylRoot = self.deleteInSubFoldersEnabled();
+            $.ajax({
+                url: API_BASEURL + "plugin/"+PLUGIN_ID,
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    command: "checkboxStates",
+                    deleteAfterPrint: checkedDeleteAfterPrint,
+                    deleteInSubFolders: checkedDeleteOnylRoot
+                }),
+                contentType: "application/json; charset=UTF-8"
+            })
         }
         // assign event-listener
         self.deleteAfterPrintEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
+        self.deleteInSubFoldersEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
+
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
             if (plugin != PLUGIN_ID) {
@@ -61,6 +56,9 @@ $(function() {
             }
             if (data.deleteAfterPrintEnabled != undefined){
                 self.deleteAfterPrintEnabled(data.deleteAfterPrintEnabled);
+            }
+            if (data.deleteInSubFoldersEnabled != undefined){
+                self.deleteInSubFoldersEnabled(data.deleteInSubFoldersEnabled);
             }
             if (data.message){
 					new PNotify({

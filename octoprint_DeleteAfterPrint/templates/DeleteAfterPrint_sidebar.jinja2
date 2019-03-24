@@ -1,7 +1,8 @@
 <div id="sidebar_plugin_deleteAfterPrint" class="input-group">
 	<label class="checkbox">
-		<input type="checkbox" data-bind="enable: loginState.isUser(), checked: deleteAfterPrintEnabled">
-		Delete after print finishes
-<!--        {{ _('Shutdown after print finishes') }} -->
+		<input type="checkbox" data-bind="enable: loginState.isUser(), checked: deleteAfterPrintEnabled" />
+		Delete after print finishes<br/>
+		<input type="checkbox" data-bind="enable: loginState.isUser() && deleteAfterPrintEnabled, checked: deleteInSubFoldersEnabled" />
+		also in sub-folders
 	</label>
 </div>

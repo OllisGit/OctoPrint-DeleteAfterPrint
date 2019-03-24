@@ -11,7 +11,6 @@ from __future__ import absolute_import
 import flask
 import time
 from datetime import datetime, timedelta
-import os
 import octoprint.plugin
 from operator import itemgetter
 from octoprint.filemanager.destinations import FileDestinations
@@ -20,6 +19,15 @@ from octoprint.events import eventManager, Events
 import octoprint.filemanager
 import octoprint.filemanager.util
 import octoprint.filemanager.storage
+
+
+SETTINGS_KEY_DELETE_AFTER_PRINT_LASTVALUE = "deleteAfterPrintLastValue"
+SETTINGS_KEY_DELETE_IN_SUBFOLDERS_LASTVALUE= "deleteInSubFoldersLastValue"
+SETTINGS_KEY_DAYS_LIMIT = "daysLimit"
+
+DEFAULT_DELETEAFTERPRINT_VALUE = False
+DEFAULT_INSUBFOLDER_VALUE = False
+
 
 class DeleteAfterPrintPlugin(
     octoprint.plugin.SettingsPlugin,
@@ -33,8 +41,8 @@ class DeleteAfterPrintPlugin(
 
     def __init__(self):
         self.rememberCheckBox = False
-        self.lastCheckBoxValue = False
-        self._deleteAfterPrintEnabled = False
+        self._deleteAfterPrintEnabled = DEFAULT_DELETEAFTERPRINT_VALUE
+        self._deleteInSubFoldersEnabled = DEFAULT_INSUBFOLDER_VALUE
 
         self._deleteFile = False
         self.daysLimit = 0
@@ -43,12 +51,19 @@ class DeleteAfterPrintPlugin(
         self.rememberCheckBox = self._settings.get_boolean(["rememberCheckBox"])
         self._logger.debug("rememberCheckBox: %s" % self.rememberCheckBox)
 
-        self.lastCheckBoxValue = self._settings.get_boolean(["lastCheckBoxValue"])
-        self._logger.debug("lastCheckBoxValue: %s" % self.lastCheckBoxValue)
         if self.rememberCheckBox:
-            self._deleteAfterPrintEnabled = self.lastCheckBoxValue
+            deleteAfterPrintLastValue  = self._settings.get_boolean([SETTINGS_KEY_DELETE_AFTER_PRINT_LASTVALUE])
+            deleteInSubFoldersLastValue  = self._settings.get_boolean([SETTINGS_KEY_DELETE_IN_SUBFOLDERS_LASTVALUE])
 
-        self.daysLimit = self._settings.get_int(["daysLimit"])
+            if deleteAfterPrintLastValue is not None:
+                self._deleteAfterPrintEnabled = deleteAfterPrintLastValue
+            if deleteInSubFoldersLastValue is not None:
+                self._deleteInSubFoldersEnabled = deleteInSubFoldersLastValue
+
+
+        daysLimit = self._settings.get_int([SETTINGS_KEY_DAYS_LIMIT])
+        if daysLimit is not None:
+            self.daysLimit = daysLimit
 
 
 
@@ -56,19 +71,21 @@ class DeleteAfterPrintPlugin(
     def on_event(self, event, payload):
 
         if event == Events.CLIENT_OPENED:
+            # Send initial values to the frontend
             self._plugin_manager.send_plugin_message(self._identifier,
-                                                     dict(deleteAfterPrintEnabled=self._deleteAfterPrintEnabled))
+                                                     dict(deleteAfterPrintEnabled=self._deleteAfterPrintEnabled,
+                                                          deleteInSubFoldersEnabled=self._deleteInSubFoldersEnabled))
 
             # is deletion after days activated
-            daysLimit = self._settings.get_int(["daysLimit"])
-            if (daysLimit > 0):
+            daysLimit = self._settings.get_int([SETTINGS_KEY_DAYS_LIMIT])
+            if daysLimit > 0:
                 allFiles = self._file_manager.list_files(filter=self._historyFilterFunction)
                 notificationMessage = ""
 
                 for destination in allFiles:
                     allFileEntries = allFiles.get(destination)
                     for fileEntries in allFileEntries:
-                        if (len(fileEntries) > 0):
+                        if len(fileEntries) > 0:
                             filename = fileEntries
                                 #fileEntries.keys()[0]
                             if destination == FileDestinations.SDCARD:
@@ -86,8 +103,6 @@ class DeleteAfterPrintPlugin(
 
         elif event == Events.PRINT_STARTED:
             self._logger.info("Printing started. Detailed progress started." + str(payload))
-            fileData = self._file_manager.get_metadata(payload["origin"], payload["file"])
-            self._logger.info("Try unselect file")
 
         elif event == Events.FILE_SELECTED:
             self._logger.info("File selected")
@@ -95,19 +110,24 @@ class DeleteAfterPrintPlugin(
         elif event == Events.PRINT_DONE:
             self._logger.info("Printing succesfull!")
             if self._deleteAfterPrintEnabled:
-                self._logger.info("Try unselect file")
-                for attempt in range(1, 5):
-                    if self._printer.is_ready() == True:
-                        break;
-                    self._logger.info("...wait for printer being ready...attempt:"+str(attempt))
-                    time.sleep(1)
-                self._logger.info("Ready:::" + str(self._printer.is_ready()))
-                self._printer.unselect_file()
-                self._logger.info("Unselect file")
-
                 self._destination = payload.get("origin", "")
-                self._filename = payload.get("name", "")
-                self._deleteFile = True
+                #self._filename = payload.get("name", "")
+                self._filename = payload.get("path", "")
+
+                if self._deleteInSubFoldersEnabled == False and self._filename.find('/') != -1:
+                    self._deleteFile = False
+                else:
+                    self._deleteFile = True
+
+                    self._logger.info("Try unselect file")
+                    for attempt in range(1, 5):
+                        if self._printer.is_ready() == True:
+                            break;
+                        self._logger.info("...wait for printer being ready...attempt:"+str(attempt))
+                        time.sleep(1)
+                    self._logger.info("Ready:::" + str(self._printer.is_ready()))
+                    self._printer.unselect_file()
+                    self._logger.info("Unselect file")
 
         elif event == Events.METADATA_STATISTICS_UPDATED:
             if self._deleteFile:
@@ -128,7 +148,7 @@ class DeleteAfterPrintPlugin(
                 lastPrintTimestamp = lastEntry.get("timestamp")
                 currentTime = time.time()
                 currentDate = datetime.now()
-                daysLimit = self._settings.get_int(["daysLimit"])
+                daysLimit = self._settings.get_int([SETTINGS_KEY_DAYS_LIMIT])
                 limitDate = currentDate - timedelta(days=daysLimit)
                 lastPrintDate = datetime.fromtimestamp(lastPrintTimestamp)
 
@@ -142,40 +162,39 @@ class DeleteAfterPrintPlugin(
                      custom_bindings=False,
                      icon="trash"),
                 dict(type="settings", custom_bindings=False)]
-## fa-trash-o
 
     def get_api_commands(self):
-        return dict(enable=[],
-                    disable=[],
-                    abort=[])
+        #return dict(checkboxStates=["deleteAfterPrint", "deleteInSubFolders"])
+        return dict(checkboxStates=[])
 
     def on_api_command(self, command, data):
         #if not user_permission.can():
         #    return make_response("Insufficient rights", 403)
 
-        if command == "enable":
-            self._deleteAfterPrintEnabled = True
-        elif command == "disable":
-            self._deleteAfterPrintEnabled = False
+        if command == "checkboxStates":
+            if data.has_key("deleteAfterPrint"):
+                self._deleteAfterPrintEnabled = bool(data["deleteAfterPrint"])
+            if  data.has_key("deleteInSubFolders"):
+                self._deleteInSubFoldersEnabled = bool(data["deleteInSubFolders"])
 
-        if command == "enable" or command == "disable":
-            self.lastCheckBoxValue = self._deleteAfterPrintEnabled
             if self.rememberCheckBox:
-                self._settings.set_boolean(["lastCheckBoxValue"], self.lastCheckBoxValue)
+                self._settings.set_boolean([SETTINGS_KEY_DELETE_AFTER_PRINT_LASTVALUE],self._deleteAfterPrintEnabled)
+                self._settings.set_boolean([SETTINGS_KEY_DELETE_IN_SUBFOLDERS_LASTVALUE],self._deleteInSubFoldersEnabled)
                 self._settings.save()
                 eventManager().fire(Events.SETTINGS_UPDATED)
 
-        self._plugin_manager.send_plugin_message(self._identifier,
-                                                 dict(deleteAfterPrintEnabled=self._deleteAfterPrintEnabled))
+#        self._plugin_manager.send_plugin_message(self._identifier,
+#                                                 dict(deleteAfterPrintEnabled=self._deleteAfterPrintEnabled,
+#                                                      deleteInSubFoldersEnabled=self._deleteInSubFoldersEnabled))
 
 
     def on_api_get(self, request):
         action = request.values["action"]
 
-        if ("isResetSettingsEnabled" == action):
+        if "isResetSettingsEnabled" == action:
             return flask.jsonify(enabled="true")
 
-        if ("resetSettings" == action):
+        if "resetSettings" == action:
             self._settings.set([], self.get_settings_defaults())
             self._settings.save()
             return flask.jsonify(self.get_settings_defaults())
@@ -191,15 +210,15 @@ class DeleteAfterPrintPlugin(
         return dict(
             # put your plugin's default settings here
             rememberCheckBox=True,
-            lastCheckBoxValue=True,
-            daysLimit=0
+            daysLimit=0,
+            deleteAfterPrintLastValue = DEFAULT_DELETEAFTERPRINT_VALUE,
+            deleteInSubFoldersLastValue = DEFAULT_INSUBFOLDER_VALUE
         )
 
     def on_settings_save(self, data):
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
         self.rememberCheckBox = self._settings.get_boolean(["rememberCheckBox"])
-        self.lastCheckBoxValue = self._settings.get_boolean(["lastCheckBoxValue"])
-        self.daysLimit = self._settings.get_int(["daysLimit"])
+        self.daysLimit = self._settings.get_int([SETTINGS_KEY_DAYS_LIMIT])
 
     ##~~ AssetPlugin mixin
     def get_assets(self):
