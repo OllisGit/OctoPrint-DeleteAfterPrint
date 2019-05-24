@@ -24,7 +24,7 @@ If you want to delete files after a couple of days, use the Plugin-Settings. Del
 Install via the bundled [Plugin Manager](https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager)
 or manually using this URL:
 
-    https://github.com/OllisGit/OctoPrint-DeleteAfterPrint/archive/master.zip
+    https://github.com/OllisGit/OctoPrint-DeleteAfterPrint/releases/latest/download/master.zip
 
 
 ## Configuration
