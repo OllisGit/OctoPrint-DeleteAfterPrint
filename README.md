@@ -1,5 +1,9 @@
 # DeleteAfterPrint
 
+[![Version](https://img.shields.io/badge/dynamic/json.svg?color=brightgreen&label=version&url=https://api.github.com/repos/OllisGit/OctoPrint-DeleteAfterPrint/releases&query=$[0].name)]()
+[![Released](https://img.shields.io/badge/dynamic/json.svg?color=brightgreen&label=released&url=https://api.github.com/repos/OllisGit/OctoPrint-DeleteAfterPrint/releases&query=$[0].published_at)]()
+![GitHub Releases (by Release)](https://img.shields.io/github/downloads/OllisGit/OctoPrint-DeleteAfterPrint/latest/total.svg)
+
 Delete automatically the Print-Model: 
 * after successful print. If the print fails, the deletion is not executed!
 * after predefined days
