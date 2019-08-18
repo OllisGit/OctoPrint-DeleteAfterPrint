@@ -24,6 +24,8 @@ $(function() {
 
         self.deleteAfterPrintEnabled = ko.observable();
         self.deleteInSubFoldersEnabled = ko.observable();
+        self.deleteWhenFailedEnabled = ko.observable();
+        self.deleteWhenCanceledEnabled = ko.observable();
 
         self.settingsViewModel.isDaysLimitVisible = function(daysLimit) {
             var result = daysLimit != "0";
@@ -33,6 +35,8 @@ $(function() {
         self.onDeleteAfterPrintEvent = function() {
             var checkedDeleteAfterPrint = self.deleteAfterPrintEnabled();
             var checkedDeleteOnylRoot = self.deleteInSubFoldersEnabled();
+            var checkedDeleteFailed = self.deleteWhenFailedEnabled();
+            var checkedDeleteCanceled = self.deleteWhenCanceledEnabled();
             $.ajax({
                 url: API_BASEURL + "plugin/"+PLUGIN_ID,
                 type: "POST",
@@ -40,7 +44,10 @@ $(function() {
                 data: JSON.stringify({
                     command: "checkboxStates",
                     deleteAfterPrint: checkedDeleteAfterPrint,
-                    deleteInSubFolders: checkedDeleteOnylRoot
+                    deleteInSubFolders: checkedDeleteOnylRoot,
+                    deleteWhenPrintFailed: checkedDeleteFailed,
+                    deleteWhenPrintCanceled: checkedDeleteCanceled
+
                 }),
                 contentType: "application/json; charset=UTF-8"
             })
@@ -48,6 +55,8 @@ $(function() {
         // assign event-listener
         self.deleteAfterPrintEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
         self.deleteInSubFoldersEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
+        self.deleteWhenFailedEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
+        self.deleteWhenCanceledEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
 
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
@@ -60,9 +69,16 @@ $(function() {
             if (data.deleteInSubFoldersEnabled != undefined){
                 self.deleteInSubFoldersEnabled(data.deleteInSubFoldersEnabled);
             }
+            if (data.deleteWhenFailedEnabled != undefined){
+                self.deleteWhenFailedEnabled(data.deleteWhenFailedEnabled);
+            }
+            if (data.deleteWhenCanceledEnabled != undefined){
+                self.deleteWhenCanceledEnabled(data.deleteWhenCanceledEnabled);
+            }
+
             if (data.message){
 					new PNotify({
-						title: 'Old files were deleted:',
+						title: 'File(s) were deleted:',
 						text: data.message,
 						type: "popup",
 						hide: false

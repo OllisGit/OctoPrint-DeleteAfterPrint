@@ -5,7 +5,7 @@
 ![GitHub Releases (by Release)](https://img.shields.io/github/downloads/OllisGit/OctoPrint-DeleteAfterPrint/latest/total.svg)
 
 Delete automatically the Print-Model: 
-* after successful print. If the print fails, the deletion is not executed!
+* after successful print or if you want also on canceled and failed prints
 * after predefined days
 
 The user can enable automatic deletion after each print by using a checkbox in the sidebar.
