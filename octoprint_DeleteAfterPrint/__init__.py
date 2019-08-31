@@ -7,12 +7,8 @@ from datetime import datetime, timedelta
 import octoprint.plugin
 from operator import itemgetter
 from octoprint.filemanager.destinations import FileDestinations
+
 from octoprint.events import eventManager, Events
-
-import octoprint.filemanager
-import octoprint.filemanager.util
-import octoprint.filemanager.storage
-
 
 SETTINGS_KEY_DELETE_AFTER_PRINT_LASTVALUE = "deleteAfterPrintLastValue"
 SETTINGS_KEY_DELETE_IN_SUBFOLDERS_LASTVALUE= "deleteInSubFoldersLastValue"
@@ -22,10 +18,18 @@ SETTINGS_KEY_DELETE_WHEN_CANCELED_LASTVALUE= "deleteWhenCanceledLastValue"
 
 SETTINGS_KEY_DAYS_LIMIT = "daysLimit"
 
+SETTINGS_KEY_DELETE_MOVE_METHODE = "deleteMoveMethode"
+SETTINGS_KEY_MOVE_FOLDER = "moveFolder"
+
+METHODE_DELETE = "delete"
+METHODE_MOVE = "move"
+
 DEFAULT_DELETEAFTERPRINT_VALUE = False
 DEFAULT_INSUBFOLDER_VALUE = False
 DEFAULT_WHENPRINT_FAILED_VALUE = False
 DEFAULT_WHENPRINT_CANCELED_VALUE = False
+DEFAULT_DELETE_MOVE_METHODE = METHODE_DELETE
+DEFAULT_MOVE_FOLDER = "_archive"
 
 
 class DeleteAfterPrintPlugin(
@@ -77,14 +81,7 @@ class DeleteAfterPrintPlugin(
 
         if event == Events.CLIENT_OPENED:
             # Send initial values to the frontend
-            self._plugin_manager.send_plugin_message(self._identifier,
-                                                     dict(
-                                                         deleteAfterPrintEnabled=self._deleteAfterPrintEnabled,
-                                                         deleteInSubFoldersEnabled=self._deleteInSubFoldersEnabled,
-                                                         deleteWhenFailedEnabled=self._deleteWhenPrintFailed,
-                                                         deleteWhenCanceledEnabled=self._deleteWhenPrintCanceled
-                                                        )
-                                                     )
+            self._sendViewModelToClient()
 
             # is deletion after days activated
             daysLimit = self._settings.get_int([SETTINGS_KEY_DAYS_LIMIT])
@@ -92,24 +89,40 @@ class DeleteAfterPrintPlugin(
                 allFiles = self._file_manager.list_files(filter=self._historyFilterFunction)
                 notificationMessage = ""
 
+## @nur für local ein move durchführen sonst nicht vorher testen
+                deleteMoveMethode = self._settings.get([SETTINGS_KEY_DELETE_MOVE_METHODE])
+
                 for destination in allFiles:
+
+                    if (deleteMoveMethode and (deleteMoveMethode == METHODE_MOVE) and destination == FileDestinations.SDCARD):
+                        #no move for SD-Card
+                        continue
                     allFileEntries = allFiles.get(destination)
                     for fileEntries in allFileEntries:
                         if len(fileEntries) > 0:
                             filename = fileEntries
-                                #fileEntries.keys()[0]
-                            if destination == FileDestinations.SDCARD:
-                                self._printer.delete_sd_file(filename)
-                            else:
-                                self._file_manager.remove_file(destination, filename)
+
+                            self._deleteOrMoveFile(destination, filename)
+
+                            #if destination == FileDestinations.SDCARD:
+                            #    self._printer.delete_sd_file(filename)
+                            #else:
+                            #    self._file_manager.remove_file(destination, filename)
+
                             ## popup notifier
                             notificationMessage += "<li>" + filename + "</li>"
-                            self._logger.info("File deleted '%s'." % filename)
+
 
                 if notificationMessage:
                     notificationMessage = "<ul>" + notificationMessage + "</ul>"
-                    self._plugin_manager.send_plugin_message(self._identifier,
-                                                             dict(type="popup", message=notificationMessage))
+
+                    ## MOVE
+                    if (deleteMoveMethode and (deleteMoveMethode == METHODE_MOVE)):
+                        self._sendPopupMessageToClient('info', "File(s) moved to '"+self._settings.get(
+                            [SETTINGS_KEY_MOVE_FOLDER])+"'!", notificationMessage)
+                    ## DELETE
+                    if (deleteMoveMethode and (deleteMoveMethode == METHODE_DELETE)):
+                        self._sendPopupMessageToClient('info', "File(s) deleted!", notificationMessage)
 
         elif event == Events.PRINT_STARTED:
             self._logger.info("Printing started. Detailed progress started." + str(payload))
@@ -149,16 +162,59 @@ class DeleteAfterPrintPlugin(
             if self._deleteFile:
                 #reset
                 self._deleteFile = False
-                # see files.py deleteGcodeFile API
-                if self._destination == FileDestinations.SDCARD:
-                    self._printer.delete_sd_file(self._filename)
-                else:
-                    self._file_manager.remove_file(self._destination, self._filename)
-                self._logger.info("File deleted.")
-                notificationMessage = "<ul>" + self._filename + "</ul>"
-                self._plugin_manager.send_plugin_message(self._identifier,
-                                                         dict(type="popup", message=notificationMessage))
 
+                deleteMoveMethode = self._deleteOrMoveFile(self._destination, self._filename)
+                # move or delete
+                if (deleteMoveMethode and (deleteMoveMethode == METHODE_MOVE)):
+                    msg = "File '" + self._filename + "' moved to folder '" + self._settings.get([SETTINGS_KEY_MOVE_FOLDER]) + "'"
+                    self._sendPopupMessageToClient('info', "File is moved!", msg)
+                if (deleteMoveMethode and (deleteMoveMethode == METHODE_DELETE)):
+                    ## DELETE - FILE
+                    msg = self._filename
+                    self._sendPopupMessageToClient('info', "File is deleted!", msg)
+
+    def _deleteOrMoveFile(self, destination, filename):
+        # move or delete
+        deleteMoveMethode = self._settings.get([SETTINGS_KEY_DELETE_MOVE_METHODE])
+        if (deleteMoveMethode and (deleteMoveMethode == METHODE_MOVE)):
+            ## MOVE - FILE
+            if destination == FileDestinations.SDCARD:
+                # move for sd-card not supported
+                self._sendPopupMessageToClient('error', "Not supported!",
+                                               "Move files on SD-Card is not supported. Please create an issue if you need this feature!")
+                deleteMoveMethode = None
+            else:
+                moveToFolder = self._settings.get([SETTINGS_KEY_MOVE_FOLDER])
+                self._file_manager.move_file(FileDestinations.LOCAL, filename, moveToFolder + "/" + filename)
+                self._logger.info("File '" + filename + "' is moved to folder '" + moveToFolder + "'!")
+        else:
+            ## DELETE - FILE
+            # see files.py deleteGcodeFile API
+            if (destination == FileDestinations.SDCARD):
+                self._printer.delete_sd_file(filename)
+            else:
+                self._file_manager.remove_file(destination, filename)
+            self._logger.info("File '" + filename + "' deleted.")
+        return deleteMoveMethode
+
+    #type: 'notice', 'info', 'success', or 'error'
+    def _sendPopupMessageToClient(self, type, title, popUpMessage):
+        self._plugin_manager.send_plugin_message(self._identifier,
+                                                 dict(message_type=type,
+                                                      message_title=title,
+                                                      message_text=popUpMessage))
+
+    def _sendViewModelToClient(self):
+        self._plugin_manager.send_plugin_message(self._identifier,
+                                                 dict(
+                                                     deleteAfterPrintEnabled=self._deleteAfterPrintEnabled,
+                                                     deleteInSubFoldersEnabled=self._deleteInSubFoldersEnabled,
+                                                     deleteWhenFailedEnabled=self._deleteWhenPrintFailed,
+                                                     deleteWhenCanceledEnabled=self._deleteWhenPrintCanceled,
+                                                     deleteMoveMethode=self._settings.get(
+                                                         [SETTINGS_KEY_DELETE_MOVE_METHODE])
+                                                 )
+                                                 )
 
     def _historyFilterFunction(self, entry, entry_data):
         history = entry_data.get("history")
@@ -237,13 +293,43 @@ class DeleteAfterPrintPlugin(
             deleteAfterPrintLastValue = DEFAULT_DELETEAFTERPRINT_VALUE,
             deleteInSubFoldersLastValue = DEFAULT_INSUBFOLDER_VALUE,
             deleteWhenFailedLastValue = DEFAULT_WHENPRINT_FAILED_VALUE,
-            deleteWhenCanceledLastValue = DEFAULT_WHENPRINT_CANCELED_VALUE
+            deleteWhenCanceledLastValue = DEFAULT_WHENPRINT_CANCELED_VALUE,
+            deleteMoveMethode = DEFAULT_DELETE_MOVE_METHODE,
+            moveFolder = DEFAULT_MOVE_FOLDER
         )
 
     def on_settings_save(self, data):
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
         self.rememberCheckBox = self._settings.get_boolean(["rememberCheckBox"])
         self.daysLimit = self._settings.get_int([SETTINGS_KEY_DAYS_LIMIT])
+
+        self._sendViewModelToClient()
+        deleteMoveMethode = self._settings.get([SETTINGS_KEY_DELETE_MOVE_METHODE])
+        if (deleteMoveMethode):
+            if (deleteMoveMethode == METHODE_MOVE):
+                # check if archive folder alr4eady exitst, if not create it
+                moveFolder = self._settings.get([SETTINGS_KEY_MOVE_FOLDER])
+                if (moveFolder):
+                    target = FileDestinations.LOCAL
+                    # from octoprint.server.api.files import _verifyFolderExists
+                    # verifyResult = _verifyFolderExists(target, moveFolder)
+                    verifyResult = self._file_manager.folder_exists(target, moveFolder)
+                    if (verifyResult == False):
+                        resultType = 'info'
+                        resultTitle = "Successful"
+                        resultMessage = "Folder '"+moveFolder+"' created"
+                        try:
+                            self._logger.debug("try to create moveFolder '"+moveFolder+"'")
+                            self._file_manager.add_folder(target, moveFolder)
+                        except (ValueError, RuntimeError):
+                            resultType = 'error'
+                            resultTitle = "ERROR"
+                            resultMessage = "Error during creation of folder '"+moveFolder+"'"
+                            self._logger.error("BOOM something goes wrong during creation of '"+moveFolder+"'")
+                            self._logger.error(RuntimeError)
+                            self._logger.error(ValueError)
+                        self._sendPopupMessageToClient(resultType, resultTitle, resultMessage)
+
 
     ##~~ AssetPlugin mixin
     def get_assets(self):
@@ -263,7 +349,7 @@ class DeleteAfterPrintPlugin(
         # for details.
         return dict(
             DeleteAfterPrint=dict(
-                displayName="DeleteAfterPrint Plugin",
+                displayName="DeleteMoveAfterPrint Plugin",
                 displayVersion=self._plugin_version,
 
                 # version check: github repository

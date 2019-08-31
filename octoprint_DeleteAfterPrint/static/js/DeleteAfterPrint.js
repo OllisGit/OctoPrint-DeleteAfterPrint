@@ -13,6 +13,8 @@ $(function() {
                                 // assign new settings-values // TODO find a more generic way
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.daysLimit(data.daysLimit);
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.rememberCheckBox(data.rememberCheckBox);
+                                self.settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode(data.deleteMoveMethode);
+                                self.settingsViewModel.settings.plugins.DeleteAfterPrint.moveFolder(data.moveFolder);
         });
 
 
@@ -26,6 +28,8 @@ $(function() {
         self.deleteInSubFoldersEnabled = ko.observable();
         self.deleteWhenFailedEnabled = ko.observable();
         self.deleteWhenCanceledEnabled = ko.observable();
+
+        self.deleteMoveText = ko.observable();
 
         self.settingsViewModel.isDaysLimitVisible = function(daysLimit) {
             var result = daysLimit != "0";
@@ -47,7 +51,6 @@ $(function() {
                     deleteInSubFolders: checkedDeleteOnylRoot,
                     deleteWhenPrintFailed: checkedDeleteFailed,
                     deleteWhenPrintCanceled: checkedDeleteCanceled
-
                 }),
                 contentType: "application/json; charset=UTF-8"
             })
@@ -57,7 +60,6 @@ $(function() {
         self.deleteInSubFoldersEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
         self.deleteWhenFailedEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
         self.deleteWhenCanceledEnabled.subscribe(self.onDeleteAfterPrintEvent, self);
-
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
             if (plugin != PLUGIN_ID) {
@@ -75,14 +77,29 @@ $(function() {
             if (data.deleteWhenCanceledEnabled != undefined){
                 self.deleteWhenCanceledEnabled(data.deleteWhenCanceledEnabled);
             }
+            if (data.deleteMoveMethode == "move"){
+                self.deleteMoveText("Move");
+            } else {
+                self.deleteMoveText("Delete");
+            }
 
-            if (data.message){
+
+            if (data.message_text){
+					new PNotify({
+						title: data.message_title,
+						text: data.message_text,
+						type: data.message_type,  // 'notice', 'info', 'success', or 'error'.
+						hide: false
+						});
+/*
 					new PNotify({
 						title: 'File(s) were deleted:',
 						text: data.message,
 						type: "popup",
 						hide: false
 						});
+*/
+
             }
         }
     }

@@ -11,14 +11,14 @@ plugin_package = "octoprint_DeleteAfterPrint"
 
 # The plugin's human readable name. Can be overwritten within OctoPrint's internal data via __plugin_name__ in the
 # plugin module
-plugin_name = "OctoPrint-DeleteAfterPrint"
+plugin_name = "OctoPrint-DeleteMoveAfterPrint"
 
 # The plugin's version. Can be overwritten within OctoPrint's internal data via __plugin_version__ in the plugin module
-plugin_version = "1.4.0"
+plugin_version = "1.5.0"
 
 # The plugin's description. Can be overwritten within OctoPrint's internal data via __plugin_description__ in the plugin
 # module
-plugin_description = """Delete automatically the Print-Model after successful print"""
+plugin_description = """Delete/Move automatically the Print-Model after print"""
 
 # The plugin's author. Can be overwritten within OctoPrint's internal data via __plugin_author__ in the plugin module
 plugin_author = "Olli"

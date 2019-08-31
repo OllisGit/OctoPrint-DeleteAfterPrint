@@ -1,21 +1,30 @@
 <form id="deleteafterprint_plugin_settings" class="form-horizontal">
 
-    <h4>Auto Delete</h4>
+    <h4>Auto Delete/Move</h4>
     <div class="accordion-inner">
         <div class="control-group">
             <div class="controls">
                 <label>
-                    <input type="checkbox" data-bind="checked: settingsViewModel.settings.plugins.DeleteAfterPrint.rememberCheckBox"> Remember the value of "Delete after print finishes"
+                    <input type="checkbox" data-bind="checked: settingsViewModel.settings.plugins.DeleteAfterPrint.rememberCheckBox"> Remember the value of "Delete/Move after print finishes"
                 </label>
             </div>
         </div>
     </div>
-
-    <h4>Delete after days</h4>
     <div class="accordion-inner">
         <div class="control-group">
             <div class="controls">
-                <label >Delete files after:
+                <label><input type="radio" name="deleteMoveMethode" value="delete" data-bind="checked: settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode"/>&nbsp;&nbsp;Delete</label>
+                <label><input type="radio" name="deleteMoveMethode" value="move" data-bind="checked: settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode"/>&nbsp;&nbsp;Move to folder:</label>
+                <input type="text" name="moveFolder" data-bind="enable: settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode()=='move',
+                                                                value: settingsViewModel.settings.plugins.DeleteAfterPrint.moveFolder"/>
+            </div>
+        </div>
+    </div>
+    <h4>Delete/Move after days</h4>
+    <div class="accordion-inner">
+        <div class="control-group">
+            <div class="controls">
+                <label >Delete/Move files after:
                     <div class="input-append">
                         <input type="number" step="any" min="0" class="input-mini text-right"  data-bind="value: settingsViewModel.settings.plugins.DeleteAfterPrint.daysLimit" id="settings-daysLimit">
                         <span class="add-on">days</span>
@@ -23,10 +32,10 @@
                 </label>
                 <span class="help-block">
                     Value must be between 1 and N. <br/>
-                    A value of 0 means that this functionality is tunred off. No deletion after days!<br/>
+                    A value of 0 means that this functionality is tunred off. No deletion/movement after days!<br/>
                     <br/>
-                    If you want to execute the deletion right now you need to reload the page, because identifying the files is only executed while opening OctoPrint.<br/>
-                    <font color="red"><b>After activation ALL OLD FILES will be deleted automatically (no confirmation), if the limit is reached!!!!</b></font>
+                    If you want to execute the deletion/movement right now you need to reload the page, because identifying the files is only executed while opening OctoPrint.<br/>
+                    <font color="red"><b>After activation ALL OLD FILES will be deleted/moved automatically (no inquiry), if the limit is reached!!!!</b></font>
                 </span>
 
             </div>

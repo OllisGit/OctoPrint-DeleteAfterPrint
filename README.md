@@ -1,19 +1,18 @@
-# DeleteAfterPrint
+# DeleteMoveAfterPrint
 
 [![Version](https://img.shields.io/badge/dynamic/json.svg?color=brightgreen&label=version&url=https://api.github.com/repos/OllisGit/OctoPrint-DeleteAfterPrint/releases&query=$[0].name)]()
 [![Released](https://img.shields.io/badge/dynamic/json.svg?color=brightgreen&label=released&url=https://api.github.com/repos/OllisGit/OctoPrint-DeleteAfterPrint/releases&query=$[0].published_at)]()
 ![GitHub Releases (by Release)](https://img.shields.io/github/downloads/OllisGit/OctoPrint-DeleteAfterPrint/latest/total.svg)
 
-Delete automatically the Print-Model: 
-* after successful print or if you want also on canceled and failed prints
+Delete or **move** (*since V1.5.0+*) automatically the Print-Model: 
+* after successful print or if you want, also on canceled and failed prints
 * after predefined days
 
-The user can enable automatic deletion after each print by using a checkbox in the sidebar.
+The user can enable automatic deletion/movement after each print by using a checkbox in the sidebar.
 
-If you want to delete files after a couple of days, use the Plugin-Settings. Deletion in done while opening OctoPrint.
+If you want to delete/move files after a couple of days, use the Plugin-Settings. Deletion/Movement in done while opening OctoPrint.
 
-**ATTENTION: There is no confirmation pop-up!!!** 
-
+**ATTENTION: There is no inquiry pop-up!!!** 
 
 
 ![Sidebar](screenshots/sidebar.jpg)
