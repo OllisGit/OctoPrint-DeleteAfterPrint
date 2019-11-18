@@ -12,6 +12,7 @@ $(function() {
         new ResetSettingsUtil().assignResetSettingsFeature(PLUGIN_ID, function(data){
                                 // assign new settings-values // TODO find a more generic way
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.daysLimit(data.daysLimit);
+                                self.settingsViewModel.settings.plugins.DeleteAfterPrint.nofificationAfterPrintCheckbox(data.nofificationAfterPrintCheckbox);
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.rememberCheckBox(data.rememberCheckBox);
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode(data.deleteMoveMethode);
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.moveFolder(data.moveFolder);

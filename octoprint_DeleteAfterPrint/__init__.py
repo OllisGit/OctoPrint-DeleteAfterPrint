@@ -10,6 +10,8 @@ from octoprint.filemanager.destinations import FileDestinations
 
 from octoprint.events import eventManager, Events
 
+SETTINGS_KEY_NOTIFICATION_AFTER_PRINT = "nofificationAfterPrintCheckbox"
+
 SETTINGS_KEY_DELETE_AFTER_PRINT_LASTVALUE = "deleteAfterPrintLastValue"
 SETTINGS_KEY_DELETE_IN_SUBFOLDERS_LASTVALUE= "deleteInSubFoldersLastValue"
 
@@ -163,15 +165,16 @@ class DeleteAfterPrintPlugin(
                 #reset
                 self._deleteFile = False
 
-                deleteMoveMethode = self._deleteOrMoveFile(self._destination, self._filename)
-                # move or delete
-                if (deleteMoveMethode and (deleteMoveMethode == METHODE_MOVE)):
-                    msg = "File '" + self._filename + "' moved to folder '" + self._settings.get([SETTINGS_KEY_MOVE_FOLDER]) + "'"
-                    self._sendPopupMessageToClient('info', "File is moved!", msg)
-                if (deleteMoveMethode and (deleteMoveMethode == METHODE_DELETE)):
-                    ## DELETE - FILE
-                    msg = self._filename
-                    self._sendPopupMessageToClient('info', "File is deleted!", msg)
+                if (self._settings.get([SETTINGS_KEY_NOTIFICATION_AFTER_PRINT]) == True):
+                    deleteMoveMethode = self._deleteOrMoveFile(self._destination, self._filename)
+                    # move or delete
+                    if (deleteMoveMethode and (deleteMoveMethode == METHODE_MOVE)):
+                        msg = "File '" + self._filename + "' moved to folder '" + self._settings.get([SETTINGS_KEY_MOVE_FOLDER]) + "'"
+                        self._sendPopupMessageToClient('info', "File is moved!", msg)
+                    if (deleteMoveMethode and (deleteMoveMethode == METHODE_DELETE)):
+                        ## DELETE - FILE
+                        msg = self._filename
+                        self._sendPopupMessageToClient('info', "File is deleted!", msg)
 
     def _deleteOrMoveFile(self, destination, filename):
         # move or delete
@@ -289,6 +292,7 @@ class DeleteAfterPrintPlugin(
         return dict(
             # put your plugin's default settings here
             rememberCheckBox=True,
+            nofificationAfterPrintCheckbox=True,
             daysLimit=0,
             deleteAfterPrintLastValue = DEFAULT_DELETEAFTERPRINT_VALUE,
             deleteInSubFoldersLastValue = DEFAULT_INSUBFOLDER_VALUE,
