@@ -252,13 +252,13 @@ class DeleteAfterPrintPlugin(
         #    return make_response("Insufficient rights", 403)
 
         if command == "checkboxStates":
-            if data.has_key("deleteAfterPrint"):
+            if "deleteAfterPrint" in data:
                 self._deleteAfterPrintEnabled = bool(data["deleteAfterPrint"])
-            if  data.has_key("deleteInSubFolders"):
+            if  "deleteInSubFolders" in data:
                 self._deleteInSubFoldersEnabled = bool(data["deleteInSubFolders"])
-            if  data.has_key("deleteWhenPrintFailed"):
+            if  "deleteWhenPrintFailed" in data:
                 self._deleteWhenPrintFailed = bool(data["deleteWhenPrintFailed"])
-            if  data.has_key("deleteWhenPrintCanceled"):
+            if  "deleteWhenPrintCanceled" in data:
                 self._deleteWhenPrintCanceled = bool(data["deleteWhenPrintCanceled"])
 
             if self.rememberCheckBox:
@@ -373,6 +373,7 @@ class DeleteAfterPrintPlugin(
 # ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that
 # can be overwritten via __plugin_xyz__ control properties. See the documentation for that.
 __plugin_name__ = "DeleteAfterPrint Plugin"
+__plugin_pythoncompat__ = ">=2.7,<4"
 
 
 def __plugin_load__():
