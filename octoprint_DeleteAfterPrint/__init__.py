@@ -269,7 +269,6 @@ class DeleteAfterPrintPlugin(
                 self._settings.save()
                 eventManager().fire(Events.SETTINGS_UPDATED)
 
-
     def on_api_get(self, request):
         action = request.values["action"]
 
