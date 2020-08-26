@@ -13,6 +13,7 @@ $(function() {
                                 // assign new settings-values // TODO find a more generic way
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.daysLimit(data.daysLimit);
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.nofificationAfterPrintCheckbox(data.nofificationAfterPrintCheckbox);
+                                self.settingsViewModel.settings.plugins.DeleteAfterPrint.nofificationHideAfterTimeCheckbox(data.nofificationHideAfterTimeCheckbox);
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.rememberCheckBox(data.rememberCheckBox);
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode(data.deleteMoveMethode);
                                 self.settingsViewModel.settings.plugins.DeleteAfterPrint.moveFolder(data.moveFolder);
@@ -90,7 +91,7 @@ $(function() {
 						title: data.message_title,
 						text: data.message_text,
 						type: data.message_type,  // 'notice', 'info', 'success', or 'error'.
-						hide: false
+						hide: data.hide_type
 						});
 /*
 					new PNotify({

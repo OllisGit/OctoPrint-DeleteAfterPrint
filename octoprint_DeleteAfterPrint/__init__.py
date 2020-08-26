@@ -11,6 +11,7 @@ from octoprint.filemanager.destinations import FileDestinations
 from octoprint.events import eventManager, Events
 
 SETTINGS_KEY_NOTIFICATION_AFTER_PRINT = "nofificationAfterPrintCheckbox"
+SETTINGS_KEY_NOTIFICATION_HIDE_AFTER_TIME = "nofificationHideAfterTimeCheckbox"
 
 SETTINGS_KEY_DELETE_AFTER_PRINT_LASTVALUE = "deleteAfterPrintLastValue"
 SETTINGS_KEY_DELETE_IN_SUBFOLDERS_LASTVALUE= "deleteInSubFoldersLastValue"
@@ -202,8 +203,13 @@ class DeleteAfterPrintPlugin(
 
     #type: 'notice', 'info', 'success', or 'error'
     def _sendPopupMessageToClient(self, type, title, popUpMessage):
+
+        # should the message disappear after some time
         self._plugin_manager.send_plugin_message(self._identifier,
-                                                 dict(message_type=type,
+                                                 dict(
+                                                     hide_type=self._settings.get(
+                                                         [SETTINGS_KEY_NOTIFICATION_AFTER_PRINT]),
+                                                     message_type=type,
                                                       message_title=title,
                                                       message_text=popUpMessage))
 
@@ -292,6 +298,7 @@ class DeleteAfterPrintPlugin(
             # put your plugin's default settings here
             rememberCheckBox=True,
             nofificationAfterPrintCheckbox=True,
+            nofificationHideAfterTimeCheckbox=False,
             daysLimit=0,
             deleteAfterPrintLastValue = DEFAULT_DELETEAFTERPRINT_VALUE,
             deleteInSubFoldersLastValue = DEFAULT_INSUBFOLDER_VALUE,
