@@ -205,10 +205,10 @@ class DeleteAfterPrintPlugin(
     def _sendPopupMessageToClient(self, type, title, popUpMessage):
 
         # should the message disappear after some time
+        shouldPopupHide = self._settings.get_boolean([SETTINGS_KEY_NOTIFICATION_HIDE_AFTER_TIME])
         self._plugin_manager.send_plugin_message(self._identifier,
                                                  dict(
-                                                     hide_type=self._settings.get(
-                                                         [SETTINGS_KEY_NOTIFICATION_AFTER_PRINT]),
+                                                     hide_type=shouldPopupHide,
                                                      message_type=type,
                                                       message_title=title,
                                                       message_text=popUpMessage))
