@@ -88,8 +88,15 @@ class DeleteAfterPrintPlugin(
 
             # is deletion after days activated
             daysLimit = self._settings.get_int([SETTINGS_KEY_DAYS_LIMIT])
-            if daysLimit > 0:
-                allFiles = self._file_manager.list_files(filter=self._historyFilterFunction)
+            if (daysLimit > 0):
+                from octoprint import __display_version__
+                allFiles = {}
+                # filter methode signature is changed in OP 1.5
+                if (__display_version__.startswith("1.5")):
+                    allFiles = self._file_manager.list_files(filter=self._historyFilterFunction15)
+                else:
+                    allFiles = self._file_manager.list_files(filter=self._historyFilterFunction)
+
                 notificationMessage = ""
 
 ## @nur für local ein move durchführen sonst nicht vorher testen
@@ -225,10 +232,21 @@ class DeleteAfterPrintPlugin(
                                                  )
                                                  )
 
+    # Methode signature was changed in OP 1.5
+    def _historyFilterFunction15(self, node):
+        entry_name = node["name"]
+        entry_data = node
+        filteredEntry = self._historyFilterFunction(entry_name, entry_data)
+        return filteredEntry
 
     def _historyFilterFunction(self, entry, entry_data):
         history = entry_data.get("history")
-        if history is not None:
+        entryType = entry_data["type"]
+        # START: WORKAROUND
+        if (entryType == "folder"):
+            entry_data["type"] = "myfolderfix"
+        # STOP: WORKAROUND
+        if (history is not None and entryType == "machinecode"):
             orderedList = sorted(history, key=itemgetter('timestamp'), reverse=True)
             if orderedList:
                 lastEntry = orderedList[0]
@@ -248,7 +266,7 @@ class DeleteAfterPrintPlugin(
                      name="Automatic Deletion",
                      custom_bindings=False,
                      icon="trash"),
-                dict(type="settings", custom_bindings=False)]
+                dict(type="settings", custom_bindings=False, name="DeleteMoveAfterPrint")]
 
     def get_api_commands(self):
         #return dict(checkboxStates=["deleteAfterPrint", "deleteInSubFolders"])
