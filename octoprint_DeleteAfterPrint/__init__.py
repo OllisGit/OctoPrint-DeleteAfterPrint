@@ -225,6 +225,7 @@ class DeleteAfterPrintPlugin(
                                                  )
                                                  )
 
+
     def _historyFilterFunction(self, entry, entry_data):
         history = entry_data.get("history")
         if history is not None:
