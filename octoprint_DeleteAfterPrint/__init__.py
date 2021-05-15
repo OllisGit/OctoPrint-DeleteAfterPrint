@@ -91,8 +91,8 @@ class DeleteAfterPrintPlugin(
             if (daysLimit > 0):
                 from octoprint import __display_version__
                 allFiles = {}
-                # filter methode signature is changed in OP 1.5
-                if (__display_version__.startswith("1.5")):
+                # filter methode signature is changed in OP 1.5+
+                if (__display_version__.startswith("1.5") or __display_version__.startswith("1.6")):
                     allFiles = self._file_manager.list_files(filter=self._historyFilterFunction15)
                 else:
                     allFiles = self._file_manager.list_files(filter=self._historyFilterFunction)
