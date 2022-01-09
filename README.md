@@ -4,7 +4,7 @@
 [![Released](https://img.shields.io/badge/dynamic/json.svg?color=brightgreen&label=released&url=https://api.github.com/repos/OllisGit/OctoPrint-DeleteAfterPrint/releases&query=$[0].published_at)]()
 ![GitHub Releases (by Release)](https://img.shields.io/github/downloads/OllisGit/OctoPrint-DeleteAfterPrint/latest/total.svg)
 
-Delete or **move** (*since V1.5.0+*) automatically the Print-Model:
+Delete or move automatically the Print-Model:
 * after successful print or if you want, also on canceled and failed prints
 * after predefined days
 

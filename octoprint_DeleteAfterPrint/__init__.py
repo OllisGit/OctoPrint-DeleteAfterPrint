@@ -1,11 +1,15 @@
 # coding=utf-8
 from __future__ import absolute_import
 
+import re
+
 import flask
 import time
 from datetime import datetime, timedelta
 import octoprint.plugin
 from operator import itemgetter
+
+from flask import jsonify
 from octoprint.filemanager.destinations import FileDestinations
 
 from octoprint.events import eventManager, Events
@@ -92,10 +96,10 @@ class DeleteAfterPrintPlugin(
                 from octoprint import __display_version__
                 allFiles = {}
                 # filter methode signature is changed in OP 1.5+
-                if (__display_version__.startswith("1.5") or __display_version__.startswith("1.6")):
-                    allFiles = self._file_manager.list_files(filter=self._historyFilterFunction15)
-                else:
+                if (__display_version__.startswith("1.4") or __display_version__.startswith("1.3")):
                     allFiles = self._file_manager.list_files(filter=self._historyFilterFunction)
+                else:
+                    allFiles = self._file_manager.list_files(filter=self._historyFilterFunction15)
 
                 notificationMessage = ""
 
@@ -185,6 +189,14 @@ class DeleteAfterPrintPlugin(
                         self._sendPopupMessageToClient('info', "File is deleted!", msg)
 
     def _deleteOrMoveFile(self, destination, filename):
+        # should this file excluded
+        if (self._settings.get_boolean(["excludeFilenameCheckbox"])):
+            excludePatterns = self._settings.get(["excludeFilenamePattern"])
+            if (self._isFileNameExcluded(filename, excludePatterns) == True):
+                self._logger.info("File '" + filename + "' is excluded and not deleted/moved.")
+                self._sendPopupMessageToClient('info', "File was excluded from delete/move!", self._filename)
+                return ""
+
         # move or delete
         deleteMoveMethode = self._settings.get([SETTINGS_KEY_DELETE_MOVE_METHODE])
         if (deleteMoveMethode and (deleteMoveMethode == METHODE_MOVE)):
@@ -195,7 +207,7 @@ class DeleteAfterPrintPlugin(
                                                "Move files on SD-Card is not supported. Please create an issue if you need this feature!")
                 deleteMoveMethode = None
             else:
-                moveToFolder = self._settings.get([SETTINGS_KEY_MOVE_FOLDER])
+                moveToFolder = self._getMoveFolder()
                 self._file_manager.move_file(FileDestinations.LOCAL, filename, moveToFolder + "/" + filename)
                 self._logger.info("File '" + filename + "' is moved to folder '" + moveToFolder + "'!")
         else:
@@ -221,25 +233,40 @@ class DeleteAfterPrintPlugin(
                                                       message_text=popUpMessage))
 
     def _sendViewModelToClient(self):
+
+        selectedDeleteMoveOption = ""
+        if (self._deleteAfterPrintEnabled == False):
+            selectedDeleteMoveOption = "[DO NOTHING]"
+        else:
+            if (self._settings.get([SETTINGS_KEY_DELETE_MOVE_METHODE]) == METHODE_DELETE):
+                selectedDeleteMoveOption = "[DELETE FILE]"
+            else:
+                selectedDeleteMoveOption = self._getMoveFolder()
+
         self._plugin_manager.send_plugin_message(self._identifier,
                                                  dict(
                                                      deleteAfterPrintEnabled=self._deleteAfterPrintEnabled,
                                                      deleteInSubFoldersEnabled=self._deleteInSubFoldersEnabled,
                                                      deleteWhenFailedEnabled=self._deleteWhenPrintFailed,
                                                      deleteWhenCanceledEnabled=self._deleteWhenPrintCanceled,
-                                                     deleteMoveMethode=self._settings.get(
-                                                         [SETTINGS_KEY_DELETE_MOVE_METHODE])
-                                                 )
+                                                     selectedDeleteMoveOption=selectedDeleteMoveOption
+                                                    )
                                                  )
 
-    # Methode signature was changed in OP 1.5
+    def _getMoveFolder(self):
+        movedFolder = self._settings.get([SETTINGS_KEY_MOVE_FOLDER])
+        if (movedFolder[0] != "/"):
+            movedFolder = "/" + movedFolder
+        return movedFolder
+
+    # Methode signature was changed since OP 1.5
     def _historyFilterFunction15(self, node):
         entry_name = node["name"]
         entry_data = node
         filteredEntry = self._historyFilterFunction(entry_name, entry_data)
         return filteredEntry
 
-    def _historyFilterFunction(self, entry, entry_data):
+    def _historyFilterFunction(self, entry_name, entry_data):
         history = entry_data.get("history")
         entryType = entry_data["type"]
         # START: WORKAROUND
@@ -259,18 +286,30 @@ class DeleteAfterPrintPlugin(
 
                 if lastPrintDate < limitDate:
                     # to be delete
-                    return entry
+                    return entry_name
 
-    def get_template_configs(self):
-        return [dict(type="sidebar",
-                     name="Automatic Deletion",
-                     custom_bindings=False,
-                     icon="trash"),
-                dict(type="settings", custom_bindings=False, name="DeleteMoveAfterPrint")]
+    def _isFileNameExcluded(self, filenameToTest, excludePatterns):
+
+        result = False
+        if (len(excludePatterns) != 0 and len(filenameToTest) != 0):
+            allExcludePatterns = excludePatterns.split("\n")
+            for exPattern in allExcludePatterns:
+                if (len(exPattern.strip()) == 0):
+                    continue
+
+
+                exPattern = re.compile(exPattern)
+                if (exPattern.fullmatch(filenameToTest)):
+                    # should be excluded
+                    result = True
+                    break
+
+        return result
 
     def get_api_commands(self):
         #return dict(checkboxStates=["deleteAfterPrint", "deleteInSubFolders"])
-        return dict(checkboxStates=[])
+        return dict(checkboxStates=[],
+                    testExcludePatterns=[])
 
     def on_api_command(self, command, data):
         #if not user_permission.can():
@@ -287,12 +326,51 @@ class DeleteAfterPrintPlugin(
                 self._deleteWhenPrintCanceled = bool(data["deleteWhenPrintCanceled"])
 
             if self.rememberCheckBox:
-                self._settings.set_boolean([SETTINGS_KEY_DELETE_AFTER_PRINT_LASTVALUE],self._deleteAfterPrintEnabled)
-                self._settings.set_boolean([SETTINGS_KEY_DELETE_IN_SUBFOLDERS_LASTVALUE],self._deleteInSubFoldersEnabled)
-                self._settings.set_boolean([SETTINGS_KEY_DELETE_WHEN_FAILED_LASTVALUE],self._deleteWhenPrintFailed)
-                self._settings.set_boolean([SETTINGS_KEY_DELETE_WHEN_CANCELED_LASTVALUE],self._deleteWhenPrintCanceled)
-                self._settings.save()
-                eventManager().fire(Events.SETTINGS_UPDATED)
+                if ("selectedDeleteMoveOption" in data):
+                    selectedDeleteMoveOption = data["selectedDeleteMoveOption"]
+
+                    if (selectedDeleteMoveOption == "[DO NOTHING]"):
+                        self._deleteAfterPrintEnabled = False
+                    if (selectedDeleteMoveOption == "[DELETE FILE]"):
+                        self._deleteAfterPrintEnabled = True
+                        self._settings.set([SETTINGS_KEY_DELETE_MOVE_METHODE], METHODE_DELETE)
+
+                    if (selectedDeleteMoveOption != "[DO NOTHING]" and selectedDeleteMoveOption != "[DELETE FILE]"):
+                        self._deleteAfterPrintEnabled = True
+                        self._settings.set([SETTINGS_KEY_DELETE_MOVE_METHODE], METHODE_MOVE)
+                        self._settings.set([SETTINGS_KEY_MOVE_FOLDER], selectedDeleteMoveOption)
+
+
+                self._settings.set_boolean([SETTINGS_KEY_DELETE_AFTER_PRINT_LASTVALUE], self._deleteAfterPrintEnabled)
+                self._settings.set_boolean([SETTINGS_KEY_DELETE_IN_SUBFOLDERS_LASTVALUE], self._deleteInSubFoldersEnabled)
+                self._settings.set_boolean([SETTINGS_KEY_DELETE_WHEN_FAILED_LASTVALUE], self._deleteWhenPrintFailed)
+                self._settings.set_boolean([SETTINGS_KEY_DELETE_WHEN_CANCELED_LASTVALUE], self._deleteWhenPrintCanceled)
+            else:
+                # set default values again
+                self._settings.set_boolean([SETTINGS_KEY_DELETE_AFTER_PRINT_LASTVALUE], DEFAULT_DELETEAFTERPRINT_VALUE)
+                self._settings.set_boolean([SETTINGS_KEY_DELETE_IN_SUBFOLDERS_LASTVALUE], DEFAULT_INSUBFOLDER_VALUE)
+                self._settings.set_boolean([SETTINGS_KEY_DELETE_WHEN_FAILED_LASTVALUE], DEFAULT_WHENPRINT_FAILED_VALUE)
+                self._settings.set_boolean([SETTINGS_KEY_DELETE_WHEN_CANCELED_LASTVALUE], DEFAULT_WHENPRINT_CANCELED_VALUE)
+                self._settings.set([SETTINGS_KEY_DELETE_MOVE_METHODE], DEFAULT_DELETE_MOVE_METHODE)
+                self._settings.set([SETTINGS_KEY_MOVE_FOLDER], DEFAULT_MOVE_FOLDER)
+
+            self._settings.save()
+            eventManager().fire(Events.SETTINGS_UPDATED)
+
+        if (command == "testExcludePatterns"):
+            filenameToTest = data["filenameToTest"]
+            excludePatterns = data["excludePatterns"]
+            matchResult = self._isFileNameExcluded(filenameToTest, excludePatterns)
+            resultText = ""
+            if (matchResult == True):
+                resultText = "Filename '"+filenameToTest+"' will be excluded"
+            else:
+                resultText = "Filename '"+filenameToTest+"' will NOT be exclude -> deleted/moved"
+
+            result = {
+                "result": resultText
+            }
+            return jsonify(result)
 
     def on_api_get(self, request):
         action = request.values["action"]
@@ -307,24 +385,31 @@ class DeleteAfterPrintPlugin(
 
     # ~~ TemplatePlugin mixin
     def get_template_configs(self):
-        return [
-            dict(type="settings", custom_bindings=True)
-        ]
+        return [dict(type="sidebar",
+                     name="Delete/Move after print finishes",
+                     custom_bindings=True,
+                     icon="trash"),
+                dict(type="settings",
+                     custom_bindings=True,
+                     name="Delete/Move after print")]
 
     ##~~ SettingsPlugin mixin
     def get_settings_defaults(self):
         return dict(
             # put your plugin's default settings here
+            installed_version=self._plugin_version,
             rememberCheckBox=True,
             nofificationAfterPrintCheckbox=True,
             nofificationHideAfterTimeCheckbox=False,
             daysLimit=0,
-            deleteAfterPrintLastValue = DEFAULT_DELETEAFTERPRINT_VALUE,
-            deleteInSubFoldersLastValue = DEFAULT_INSUBFOLDER_VALUE,
-            deleteWhenFailedLastValue = DEFAULT_WHENPRINT_FAILED_VALUE,
-            deleteWhenCanceledLastValue = DEFAULT_WHENPRINT_CANCELED_VALUE,
-            deleteMoveMethode = DEFAULT_DELETE_MOVE_METHODE,
-            moveFolder = DEFAULT_MOVE_FOLDER
+            deleteAfterPrintLastValue=DEFAULT_DELETEAFTERPRINT_VALUE,
+            deleteInSubFoldersLastValue=DEFAULT_INSUBFOLDER_VALUE,
+            deleteWhenFailedLastValue=DEFAULT_WHENPRINT_FAILED_VALUE,
+            deleteWhenCanceledLastValue=DEFAULT_WHENPRINT_CANCELED_VALUE,
+            deleteMoveMethode=DEFAULT_DELETE_MOVE_METHODE,
+            moveFolder=DEFAULT_MOVE_FOLDER,
+            excludeFilenameCheckbox=False,
+            excludeFilenamePattern=""
         )
 
     def on_settings_save(self, data):
@@ -337,7 +422,7 @@ class DeleteAfterPrintPlugin(
         if (deleteMoveMethode):
             if (deleteMoveMethode == METHODE_MOVE):
                 # check if archive folder alr4eady exitst, if not create it
-                moveFolder = self._settings.get([SETTINGS_KEY_MOVE_FOLDER])
+                moveFolder = self._getMoveFolder()
                 if (moveFolder):
                     target = FileDestinations.LOCAL
                     # from octoprint.server.api.files import _verifyFolderExists
@@ -358,7 +443,6 @@ class DeleteAfterPrintPlugin(
                             self._logger.error(RuntimeError)
                             self._logger.error(ValueError)
                         self._sendPopupMessageToClient(resultType, resultTitle, resultMessage)
-
 
     ##~~ AssetPlugin mixin
     def get_assets(self):
@@ -409,3 +493,9 @@ def __plugin_load__():
     __plugin_hooks__ = {
         "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
     }
+
+
+# excludePattern = "benchy.+\nhallo.gcode"
+# testFilename = "hallo.gcode"
+# res = DeleteAfterPrintPlugin()._isFileNameExcluded(testFilename, excludePattern)
+# print(res)

@@ -1,5 +1,5 @@
 <form id="deleteafterprint_plugin_settings" class="form-horizontal">
-
+    <h3>Delete/Move after print <small>{{ _('Version') }}: <span data-bind="text: settingsViewModel.settings.plugins.DeleteAfterPrint.installed_version"></span></small></h3>
     <h4>Auto Delete/Move</h4>
     <div class="accordion-inner">
         <div class="control-group">
@@ -23,17 +23,41 @@
                 </label>
             </div>
         </div>
-    </div>
-    <div class="accordion-inner">
         <div class="control-group">
             <div class="controls">
-                <label><input type="radio" name="deleteMoveMethode" value="delete" data-bind="checked: settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode"/>&nbsp;&nbsp;Delete</label>
-                <label><input type="radio" name="deleteMoveMethode" value="move" data-bind="checked: settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode"/>&nbsp;&nbsp;Move to folder:</label>
-                <input type="text" name="moveFolder" data-bind="enable: settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode()=='move',
-                                                                value: settingsViewModel.settings.plugins.DeleteAfterPrint.moveFolder"/>
+                <label>
+                    <input type="checkbox" data-bind="checked: settingsViewModel.settings.plugins.DeleteAfterPrint.excludeFilenameCheckbox"> Exclude following filename patterns for Delete/Move
+                </label>
             </div>
+            <div class="controls">
+                <textarea rows="5" class="block monospace" data-bind="value: settingsViewModel.settings.plugins.DeleteAfterPrint.excludeFilenamePattern, enable: settingsViewModel.settings.plugins.DeleteAfterPrint.excludeFilenameCheckbox"></textarea>
+                <small>You can enter filenames in each line or a regular expresstion</small>
+            </div>
+
+
+            <div class="controls">
+                <div class="input-append">
+                    <input type="text" class="input-block-level" placeholder="Enter your filename you want to test against your exclude patterns" data-bind="value: filenameToTest, enable: settingsViewModel.settings.plugins.DeleteAfterPrint.excludeFilenameCheckbox">
+                    <button class="btn" type="button" data-bind="enable: settingsViewModel.settings.plugins.DeleteAfterPrint.excludeFilenameCheckbox, click: testFilenamePattern"><i class="fas fa-spinner fa-spin" data-bind="visible: " style="display: none;"></i> Test</button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div data-bind="text: testResultMessage"></div>
+            </div>
+
         </div>
     </div>
+{#    <div class="accordion-inner">#}
+{#        <div class="control-group">#}
+{#            <div class="controls">#}
+{#                <label><input type="radio" name="deleteMoveMethode" value="delete" data-bind="checked: settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode"/>&nbsp;&nbsp;Delete</label>#}
+{#                <label><input type="radio" name="deleteMoveMethode" value="move" data-bind="checked: settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode"/>&nbsp;&nbsp;Move to folder:</label>#}
+{#                <input type="text" name="moveFolder" data-bind="enable: settingsViewModel.settings.plugins.DeleteAfterPrint.deleteMoveMethode()=='move',#}
+{#                                                                value: settingsViewModel.settings.plugins.DeleteAfterPrint.moveFolder"/>#}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
     <h4>Delete/Move after days</h4>
     <div class="accordion-inner">
         <div class="control-group">

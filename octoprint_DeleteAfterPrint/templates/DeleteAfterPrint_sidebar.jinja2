@@ -1,8 +1,22 @@
 <div id="sidebar_plugin_deleteAfterPrint" class="input-group">
-	<label class="checkbox">
-		<input type="checkbox" data-bind="enable: loginState.isUser(), checked: deleteAfterPrintEnabled" />
-		<span data-bind="text: deleteMoveText"></span> after print finishes<br/>
+{#	<label class="checkbox">#}
+{#		<input type="checkbox" data-bind="enable: loginState.isUser(), checked: deleteAfterPrintEnabled" />#}
+{#		<span data-bind="text: deleteMoveText"></span> after print finishes<br/>#}
+{#    </label>#}
+{##}
+
+	<label class="">
+        <select data-bind="
+                                  value: selectedDeleteMoveOption,
+                                  valueAllowUnset: true,
+                                  options: allDeleteMoveOptions,
+                                  event: { change: function() { deleteMoveOptionChanged() } }
+                            ">
+        </select>
     </label>
+
+
+
     <label class="checkbox">
 		<input type="checkbox" data-bind="enable: loginState.isUser() && deleteAfterPrintEnabled, checked: deleteInSubFoldersEnabled" />
 		also in sub-folders
